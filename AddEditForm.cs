@@ -11,12 +11,33 @@ using System.Xml.Linq;
 
 namespace tzclean
 {
-    public partial class AddForm : Form
+    public partial class AddEditForm : Form
     {
         public Patient returnValue = null;
-        public AddForm()
+        public AddEditForm(Patient patient = null)
         {
             InitializeComponent();
+            OperationSetUp(patient);
+        }
+
+        private void OperationSetUp(Patient patient)
+        {
+            if (patient is null)
+                return;
+
+            this.Text = "პაციენტის რედაქტირბეა";
+            FillFormForEdit(patient);
+        }
+
+        private void FillFormForEdit(Patient patient)
+        {
+            string[] name = patient.Name.Split(' ');
+            addName.Text = name[1];
+            add2Name.Text = name[0];
+            addPhone.Text = patient.PhoneNumber;
+            addDate.Value = patient.BirthDate;
+            addGender.SelectedIndex = patient.GenderId;
+            addAddress.Text = patient.Address;
         }
 
         private void addButton_Click(object sender, EventArgs e)

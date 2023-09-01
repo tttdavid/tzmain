@@ -15,6 +15,7 @@ namespace tzclean
 {
     public partial class mainWindows : Form
     {
+        string cs = "Data Source=DESKTOP-PBNEOV6;Initial Catalog=tz;Integrated Security=True";
         public mainWindows()
         {
             InitializeComponent();
@@ -23,12 +24,11 @@ namespace tzclean
         private void mainWindows_Load(object sender, EventArgs e)
         {
             RefreshGrid();
-
         }
 
         private void addButton_Click(object sender, EventArgs e)
         {
-            using (AddForm form = new AddForm())
+            using (AddEditForm form = new AddEditForm())
             {
                 DialogResult result = form.ShowDialog();
                 if (result == DialogResult.OK)
@@ -42,7 +42,7 @@ namespace tzclean
         private void editButton_Click(object sender, EventArgs e)
         {
             int id = GetId();
-            using (EditForm form = new EditForm(SelectById(id)))
+            using (AddEditForm form = new AddEditForm(SelectById(id)))
             {
                 DialogResult result = form.ShowDialog();
                 if (result == DialogResult.OK)
@@ -86,19 +86,18 @@ namespace tzclean
 
         private void InsertInDb(Patient patient)
         {
-            Patient pat = patient;
-            using (SqlConnection con = new SqlConnection("Data Source=DESKTOP-PBNEOV6;Initial Catalog=tz;Integrated Security=True"))
+            using (SqlConnection con = new SqlConnection(cs))
             {
                 con.Open();
-                string sqlQuery = "INSERT INTO Patients (FullName, Dob, GenderID, Phone, Address) " +
-                     "VALUES (@Value1, @Value2, @Value3, @Value4, @Value5)";
-                using (SqlCommand cmd = new SqlCommand(sqlQuery, con))
+                using (SqlCommand cmd = new SqlCommand("InsertPatient", con))
                 {
-                    cmd.Parameters.AddWithValue("@Value1", pat.Name);
-                    cmd.Parameters.AddWithValue("@Value2", pat.BirthDate);
-                    cmd.Parameters.AddWithValue("@Value3", pat.GenderId);
-                    cmd.Parameters.AddWithValue("@Value4", pat.PhoneNumber);
-                    cmd.Parameters.AddWithValue("@Value5", pat.Address);
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@FullName", patient.Name);
+                    cmd.Parameters.AddWithValue("@Dob", patient.BirthDate);
+                    cmd.Parameters.AddWithValue("@GenderID", patient.GenderId);
+                    cmd.Parameters.AddWithValue("@Phone", patient.PhoneNumber);
+                    cmd.Parameters.AddWithValue("@Address", patient.Address);
 
                     cmd.ExecuteNonQuery();
                 }
@@ -107,13 +106,14 @@ namespace tzclean
 
         private Patient SelectById(int id)
         {
-            using (SqlConnection con = new SqlConnection("Data Source=DESKTOP-PBNEOV6;Initial Catalog=tz;Integrated Security=True"))
+            using (SqlConnection con = new SqlConnection(cs))
             {
                 con.Open();
-                string sqlQuery = "SELECT * FROM Patients WHERE ID = @IdValue";
-                using (SqlCommand cmd = new SqlCommand(sqlQuery, con))
+                using (SqlCommand cmd = new SqlCommand("GetPatientById", con))
                 {
-                    cmd.Parameters.AddWithValue("@IdValue", id);
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@Id", id);
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
@@ -125,8 +125,8 @@ namespace tzclean
                             string number = reader["Phone"].ToString();
                             string address = reader["Address"].ToString();
 
-                            var user = new Patient(name, dob, genderId, number, address);
-                            return user;
+                            var patient = new Patient(name, dob, genderId, number, address);
+                            return patient;
                         }
                     }
                 }
@@ -136,16 +136,16 @@ namespace tzclean
 
         private void EditById(int id, Patient patient)
         {
-            using (SqlConnection con = new SqlConnection("Data Source=DESKTOP-PBNEOV6;Initial Catalog=tz;Integrated Security=True"))
+            using (SqlConnection con = new SqlConnection(cs))
             {
                 con.Open();
-                string updateQuery = "UPDATE Patients SET FullName = @Name, Dob = @BirthDate, GenderID = @GenderId, Phone = @Phone, Address = @Address WHERE ID = @Id";
-                using (SqlCommand cmd = new SqlCommand(updateQuery, con))
+                using (SqlCommand cmd = new SqlCommand("UpdatePatient", con))
                 {
-                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.AddWithValue("@Name", patient.Name);
-                    cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                    cmd.Parameters.AddWithValue("@Id", id);
+                    cmd.Parameters.AddWithValue("@FullName", patient.Name);
+                    cmd.Parameters.AddWithValue("@Dob", patient.BirthDate);
                     cmd.Parameters.AddWithValue("@GenderID", patient.GenderId);
                     cmd.Parameters.AddWithValue("@Phone", patient.PhoneNumber);
                     cmd.Parameters.AddWithValue("@Address", patient.Address);
@@ -157,13 +157,14 @@ namespace tzclean
 
         private void DeleteById(int id)
         {
-            using (SqlConnection con = new SqlConnection("Data Source=DESKTOP-PBNEOV6;Initial Catalog=tz;Integrated Security=True"))
+            using (SqlConnection con = new SqlConnection(cs))
             {
                 con.Open();
-                string sqlQuery = "DELETE FROM Patients WHERE ID = @IdValue";
-                using (SqlCommand cmd = new SqlCommand(sqlQuery, con))
+                using (SqlCommand cmd = new SqlCommand("DeletePatientById", con))
                 {
-                    cmd.Parameters.AddWithValue("@IdValue", id);
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@Id", id);
 
                     cmd.ExecuteNonQuery();
                 }
